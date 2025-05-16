@@ -193,7 +193,7 @@ func (r *Reporting8) createReport(companyName string) (model8.TemplateDataReport
 		return model8.TemplateDataReport{}, "", err
 	}
 	// Report date
-	reportdate := time.Now().AddDate(0, -1, 0)
+	reportdate := time.Now() // .AddDate(0, -1, 0)
 	tempfile := "tmp/output/" + reportdate.Format("2006-01-02") + "-report.html"
 	file, err = os.Create(tempfile)
 	if err != nil {
@@ -296,18 +296,49 @@ func (r *Reporting8) getTemplateDataVulnerability() ([]model8.TemplateDataReport
 			if len(vulnerabilities) > 0 {
 				var listvulndetails []model8.TemplateDataVulnerabilityDetails
 				for _, vuln := range vulnerabilities {
+					var definition, location, description, impact, reproductionsteps, mitigation string
+					if vuln.Definitionhtml.Valid {
+						definition = vuln.Definitionhtml.String
+					} else {
+						definition = ""
+					}
+					if vuln.Locationhtml.Valid {
+						location = vuln.Locationhtml.String
+					} else {
+						location = ""
+					}
+					if vuln.Descriptionhtml.Valid {
+						description = vuln.Descriptionhtml.String
+					} else {
+						description = ""
+					}
+					if vuln.Impacthtml.Valid {
+						impact = vuln.Impacthtml.String
+					} else {
+						impact = ""
+					}
+					if vuln.Reproductionstepshtml.Valid {
+						reproductionsteps = vuln.Reproductionstepshtml.String
+					} else {
+						reproductionsteps = ""
+					}
+					if vuln.Mitigationhtml.Valid {
+						mitigation = vuln.Mitigationhtml.String
+					} else {
+						mitigation = ""
+					}
 					vulndetails := model8.TemplateDataVulnerabilityDetails{
 						Vulnindex:             vulnindex,
 						Vulnname:              vuln.Title,
 						Vulnrisklevel:         vuln.Risklevelname,
 						Vulnconsequence:       vuln.Riskconsequencename,
 						Vulnlikelihood:        vuln.Risklikelihoodname,
-						Vulndefinition:        vuln.Definitionhtml,
-						Vulnlocation:          vuln.Locationhtml,
-						Vulndescription:       vuln.Descriptionhtml,
-						Vulnimpact:            vuln.Impacthtml,
-						Vulnreproductionsteps: vuln.Reproductionstepshtml,
-						Vulnmitigation:        vuln.Mitigationhtml,
+						Vulndefinition:        definition,
+						Vulnlocation:          location,
+						Vulndescription:       description,
+						Vulnimpact:            impact,
+						Vulnreproductionsteps: reproductionsteps,
+						Vulnmitigation:        mitigation,
 					}
 					listvulndetails = append(listvulndetails, vulndetails)
 					vulnindex = vulnindex + 1
