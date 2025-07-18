@@ -1,10 +1,12 @@
 package gocron8
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
 	"deifzar/reportingm8/pkg/log8"
+	"deifzar/reportingm8/pkg/notification8"
 
 	"github.com/go-co-op/gocron/v2"
 	"github.com/google/uuid"
@@ -45,6 +47,13 @@ func GetGoCron8() (gocron.Scheduler, gocron.JobOption, gocron.JobOption) {
 				func(jobID uuid.UUID, jobName string, err error) {
 					log8.BaseLogger.Debug().Stack().Msgf("The job '%s' (%s) has found errors: %s", jobName, jobID, err)
 					log8.BaseLogger.Info().Msgf("The following the GoCron job has found errors: %s(%s).", jobName, jobID)
+
+					// Send notification using the shared notification utility
+					message := fmt.Sprintf("Scheduled job '%s' (%s) failed: %v", jobName, jobID, err)
+					notificationErr := notification8.Helper.PublishSysErrorNotification(message, "urgent")
+					if notificationErr != nil {
+						log8.BaseLogger.Error().Err(notificationErr).Msg("Failed to send job error notification")
+					}
 				},
 			),
 		)
