@@ -50,7 +50,7 @@ func GetGoCron8() (gocron.Scheduler, gocron.JobOption, gocron.JobOption) {
 
 					// Send notification using the shared notification utility
 					message := fmt.Sprintf("Scheduled job '%s' (%s) failed: %v", jobName, jobID, err)
-					notificationErr := notification8.Helper.PublishSysErrorNotification(message, "urgent")
+					notificationErr := notification8.Helper.PublishSysErrorNotification(message, "urgent", "reportingm8")
 					if notificationErr != nil {
 						log8.BaseLogger.Error().Err(notificationErr).Msg("Failed to send job error notification")
 					}

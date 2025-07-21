@@ -29,7 +29,7 @@ func NewNotificationService() (*NotificationService, error) {
 // routing key totally customisable. Examples:
 // "app.*.*"" -> the notification via the web app only
 // "email.*.*", "#.urgent", "#.critical", "#.high" -> the notification via email
-func (ns *NotificationService) PublishNotification(routingKey string, eventType model8.Notificationevent, severity string, userRole model8.Roletype, message string) error {
+func (ns *NotificationService) PublishNotification(routingKey string, eventType model8.Notificationevent, severity string, userRole model8.Roletype, source string, message string) error {
 	metadata := model8.NotificationMetadata8{
 		Severity:    severity,
 		Channeltype: model8.App,
@@ -43,7 +43,7 @@ func (ns *NotificationService) PublishNotification(routingKey string, eventType 
 		Metadata: metadata,
 	}
 
-	err := ns.orchestrator.PublishToExchangeAndCloseChannelConnection("notification", routingKey, notification, "reportm8")
+	err := ns.orchestrator.PublishToExchangeAndCloseChannelConnection("notification", routingKey, notification, source)
 	if err != nil {
 		log8.BaseLogger.Error().Err(err).Msg("Failed to publish notification")
 		return fmt.Errorf("failed to publish notification: %w", err)
@@ -56,43 +56,43 @@ func (ns *NotificationService) PublishNotification(routingKey string, eventType 
 type NotificationHelper struct{}
 
 // PublishErrorNotification sends a `security` notification to the web app to admin users. If severity is `urgent`, `critical` or `high`, the notification will be sent via email too
-func (NotificationHelper) PublishSecurityNotificationAdmin(message string, severity string) error {
+func (NotificationHelper) PublishSecurityNotificationAdmin(message string, severity string, source string) error {
 	service, err := NewNotificationService()
 	if err != nil {
 		return fmt.Errorf("failed to create notification service: %w", err)
 	}
 
-	return service.PublishNotification("app.security."+severity, model8.Security, severity, model8.RoleAdmin, message)
+	return service.PublishNotification("app.security."+severity, model8.Security, severity, model8.RoleAdmin, message, source)
 }
 
 // PublishErrorNotification sends a `security` notification to the web app to normal users. If severity is `urgent`, `critical` or `high`, the notification will be sent via email too
-func (NotificationHelper) PublishSecurityNotificationUser(message string, severity string) error {
+func (NotificationHelper) PublishSecurityNotificationUser(message string, severity string, source string) error {
 	service, err := NewNotificationService()
 	if err != nil {
 		return fmt.Errorf("failed to create notification service: %w", err)
 	}
 
-	return service.PublishNotification("app.security."+severity, model8.Security, severity, model8.RoleUser, message)
+	return service.PublishNotification("app.security."+severity, model8.Security, severity, model8.RoleUser, message, source)
 }
 
 // PublishErrorNotification sends an error notification to admins
-func (NotificationHelper) PublishSysErrorNotification(message string, severity string) error {
+func (NotificationHelper) PublishSysErrorNotification(message string, severity string, source string) error {
 	service, err := NewNotificationService()
 	if err != nil {
 		return fmt.Errorf("failed to create notification service: %w", err)
 	}
 
-	return service.PublishNotification("app.error."+severity, model8.Error, severity, model8.RoleAdmin, message)
+	return service.PublishNotification("app.error."+severity, model8.Error, severity, model8.RoleAdmin, message, source)
 }
 
 // PublishWarningNotification sends a warning notification to admins
-func (NotificationHelper) PublishSysWarningNotification(message string, severity string) error {
+func (NotificationHelper) PublishSysWarningNotification(message string, severity string, source string) error {
 	service, err := NewNotificationService()
 	if err != nil {
 		return fmt.Errorf("failed to create notification service: %w", err)
 	}
 
-	return service.PublishNotification("app.warning."+severity, model8.Warning, severity, model8.RoleAdmin, message)
+	return service.PublishNotification("app.warning."+severity, model8.Warning, severity, model8.RoleAdmin, message, source)
 }
 
 // Global helper instance
