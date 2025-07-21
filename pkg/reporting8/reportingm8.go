@@ -513,10 +513,8 @@ func (r *Reporting8) getTemplateDataReportMain(companyNameReport string) (model8
 	if (reportauthor == model8.User8{}) {
 		return model8.TemplateDataReportMain{}, errors.New("report author not found")
 	}
-	securityposture, err := utils.GetSecurityPosture(nowvulnstotals)
-	if err != nil {
-		return model8.TemplateDataReportMain{}, err
-	}
+	securityposture := utils.GetSecurityPosture(nowvulnstotals)
+
 	// Report date
 	reportdate := time.Now().AddDate(0, -1, 0)
 	year, month, _ := reportdate.Date()

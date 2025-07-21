@@ -1,31 +1,29 @@
 package utils
 
 import (
-	"errors"
 	"maps"
 	"net"
 )
 
-func GetSecurityPosture(stats map[string]int) (string, error) {
+func GetSecurityPosture(stats map[string]int) string {
 	for level, nvul := range stats {
 		if level == "critical" && nvul > 0 {
-			return "extreme", nil
+			return "extreme"
 		}
 		if level == "high" && nvul > 0 {
-			return "high", nil
+			return "high"
 		}
 		if level == "medium" && nvul > 0 {
-			return "moderate", nil
+			return "moderate"
 		}
 		if level == "low" && nvul > 0 {
-			return "low", nil
+			return "low"
 		}
 		if level == "info" && nvul > 0 {
-			return "minimal", nil
+			return "minimal"
 		}
 	}
-	var err = errors.New("cannot calculate security posture")
-	return "", err
+	return "unknown"
 }
 
 func MergeMaps(map1, map2 map[string]map[string]int) map[string]map[string]int {
