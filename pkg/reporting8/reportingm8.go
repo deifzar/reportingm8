@@ -43,9 +43,9 @@ func (r *Reporting8) CreateAndSendEmailSummary() error {
 		return err
 	}
 	if len(users) < 1 {
-		log8.BaseLogger.Error().Msg("CreateAndSendEmailSummary - empty number of `user` role type users")
-		notification8.Helper.PublishSysErrorNotification("CreateAndSendEmailSummary - empty number of `user` role type users", "urgent", "reportingm8")
-		return errors.New("CreateAndSendEmailSummary - empty number of `user` role type users")
+		log8.BaseLogger.Warn().Msg("CreateAndSendEmailSummary - at least one customer must be enrolled in the system before sending any email summary")
+		notification8.Helper.PublishSysWarningNotification("CreateAndSendEmailSummary - at least one customer must be enrolled in the system before sending any email summary", "normal", "reportingm8")
+		return errors.New("CreateAndSendEmailSummary (Warning) - at least one customer must be enrolled in the system before sending any email summary")
 	}
 	// create email summary
 	message, err := r.getEmailSummaryMessage()
@@ -84,10 +84,10 @@ func (r *Reporting8) CreateReportAndSendEmailNotification(companyName string) er
 		notification8.Helper.PublishSysErrorNotification("CreateReportAndSendEmailNotification - errors triggered when fetching `user` role type users", "urgent", "reportingm8")
 		return err
 	}
-	if len(users) < 1 && user8.ExistReportAuthor() && user8.ExistReportOwner() {
-		log8.BaseLogger.Error().Msg("CreateReportAndSendEmailNotification - a report author and owner must be set in the system")
-		notification8.Helper.PublishSysErrorNotification("CreateReportAndSendEmailNotification - a report author and owner must be set in the system", "urgent", "reportingm8")
-		return errors.New("CreateReportAndSendEmailNotification - a report author and owner must be set in the system")
+	if len(users) < 1 || !user8.ExistReportAuthor() || !user8.ExistReportOwner() {
+		log8.BaseLogger.Warn().Msg("CreateReportAndSendEmailNotification - customers, one report author and one report owner must be set in the system before sending any report")
+		notification8.Helper.PublishSysWarningNotification("CreateReportAndSendEmailNotification - customers, one report author and one report owner must be set in the system before sending any report", "normal", "reportingm8")
+		return errors.New("CreateReportAndSendEmailNotification (Warning) - customers, one report author and one report owner must be set in the system before sending any report")
 	}
 	// crete report and return data template
 	datareport, reportfilename, err := r.createReport(companyName)
@@ -128,6 +128,7 @@ func (r *Reporting8) CreateReportAndSendEmailNotification(companyName string) er
 		return err
 	}
 	// Question: Send email to all `user` role type users or only with the 'report' flag enabled?
+	// TODO: fetch users
 	err = email8.SendEmail([]string{"no-reply@cptm8.net", "info@deifzar.me"}, message.Bytes())
 	if err != nil {
 		log8.BaseLogger.Debug().Msg(err.Error())
