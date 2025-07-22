@@ -98,23 +98,21 @@ func (m *Db8User8) GetUsersByRole(role model8.Roletype) ([]model8.User8, error) 
 }
 
 func (m *Db8User8) ExistReportOwner() bool {
-	err := m.Db.QueryRow("SELECT id, name, email, role, report FROM \"user\" WHERE report = true AND role = $1", model8.RoleUser).Scan()
+	var exists bool
+	err := m.Db.QueryRow("SELECT EXISTS(SELECT 1 FROM \"user\" WHERE report = true AND role = $1)", model8.RoleUser).Scan(&exists)
 	if err != nil {
-		if err != sql.ErrNoRows {
-			log8.BaseLogger.Debug().Stack().Msg(err.Error())
-		}
+		log8.BaseLogger.Debug().Stack().Msg(err.Error())
 		return false
 	}
-	return true
+	return exists
 }
 
 func (m *Db8User8) ExistReportAuthor() bool {
-	err := m.Db.QueryRow("SELECT id, name, email, role, report FROM \"user\" WHERE report = true AND role = $1", model8.RoleAdmin).Scan()
+	var exists bool
+	err := m.Db.QueryRow("SELECT EXISTS(SELECT 1 FROM \"user\" WHERE report = true AND role = $1)", model8.RoleAdmin).Scan(&exists)
 	if err != nil {
-		if err != sql.ErrNoRows {
-			log8.BaseLogger.Debug().Stack().Msg(err.Error())
-		}
+		log8.BaseLogger.Debug().Stack().Msg(err.Error())
 		return false
 	}
-	return true
+	return exists
 }

@@ -138,15 +138,6 @@ func (s *Schedulerm8) InitScheduler() error {
 		return err
 	}
 	log8.BaseLogger.Info().Msgf("InitScheduler - Report Job with name '%s' and ID '%s' was successfully created", job.Name(), job.ID())
-	// testing
-	err = r8.CreateAndSendEmailSummary()
-	if err != nil {
-		return err
-	}
-	err = r8.CreateReportAndSendEmailNotification(companyNameReport)
-	if err != nil {
-		return err
-	}
 	return nil
 }
 
