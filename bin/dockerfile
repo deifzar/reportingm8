@@ -1,0 +1,25 @@
+FROM alpine:3.20
+# Security updates and minimal runtime dependencies
+RUN apk --no-cache add ca-certificates tzdata \
+    && apk --no-cache upgrade \
+    && rm -rf /var/cache/apk/* \
+    && adduser -D -g '' -s /bin/sh appuser
+
+COPY --chown=appuser:appuser reportingm8 /usr/local/bin/
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD reportingm8 --help || exit 1
+
+# Metadata
+LABEL maintainer="i@deifzar.me" \
+    version="1.0" \
+    description="ReportinM8 - Hardened Report Builder (Runtime)" \
+    security.scan="required-non-root-privileges"
+
+WORKDIR /app
+
+# Expose port (document the port used)
+# EXPOSE 8004
+
+CMD ["reportingm8","launch"]

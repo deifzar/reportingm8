@@ -12,6 +12,9 @@ assets/*
 # exception to the rule
 !assets/.gitkeep
 
+# app folder
+app/*
+
 # bin folder
 bin/*
 # exception to the rule
