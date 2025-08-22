@@ -1,11 +1,22 @@
 FROM alpine:3.20
 # Security updates and minimal runtime dependencies
-RUN apk --no-cache add ca-certificates tzdata \
+RUN apk --no-cache add ca-certificates tzdata gettext \
     && apk --no-cache upgrade \
     && rm -rf /var/cache/apk/* \
     && adduser -D -g '' -s /bin/sh appuser
 
+WORKDIR /app
+
 COPY --chown=appuser:appuser reportingm8 /usr/local/bin/
+# Copy entrypoint script
+COPY --chown=appuser:appuser docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# Set ownership of the app directory
+RUN chown -R appuser:appuser /app
+
+# Switch to non-root user
+USER appuser
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
@@ -17,9 +28,10 @@ LABEL maintainer="i@deifzar.me" \
     description="ReportinM8 - Hardened Report Builder (Runtime)" \
     security.scan="required-non-root-privileges"
 
-WORKDIR /app
-
 # Expose port (document the port used)
 # EXPOSE 8004
+
+# Use custom entrypoint for secret loading 
+ENTRYPOINT ["docker-entrypoint.sh"]
 
 CMD ["reportingm8","launch"]

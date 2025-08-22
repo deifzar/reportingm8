@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"deifzar/reportingm8/pkg/cleanup8"
 	"deifzar/reportingm8/pkg/cloud8"
 	"deifzar/reportingm8/pkg/db8"
 	"deifzar/reportingm8/pkg/email8"
@@ -33,6 +34,12 @@ func NewReporting8(db *sql.DB, cnfg *viper.Viper) Reporting8Interface {
 
 // Emails get delivered the first day of the next month.
 func (r *Reporting8) CreateAndSendEmailSummary() error {
+	// Clean up old files in tmp directory (older than 24 hours)
+	cleanup := cleanup8.NewCleanup8()
+	if err := cleanup.CleanupDirectory("tmp", 24*time.Hour); err != nil {
+		log8.BaseLogger.Error().Err(err).Msg("Failed to cleanup tmp directory")
+		// Don't return error here as cleanup failure shouldn't prevent startup
+	}
 	// Fetch 'user' role type users. If none are found, we triger an error
 	DB := r.Db
 	user8 := db8.NewDb8User8(DB)
@@ -75,6 +82,12 @@ func (r *Reporting8) CreateAndSendEmailSummary() error {
 
 // Reports are delivered by default the first day of the next month.
 func (r *Reporting8) CreateReportAndSendEmailNotification(companyName string) error {
+	// Clean up old files in tmp directory (older than 24 hours)
+	cleanup := cleanup8.NewCleanup8()
+	if err := cleanup.CleanupDirectory("tmp", 24*time.Hour); err != nil {
+		log8.BaseLogger.Error().Err(err).Msg("Failed to cleanup tmp directory")
+		// Don't return error here as cleanup failure shouldn't prevent startup
+	}
 	// Fetch 'user' role type users. If none are found, we triger an error
 	DB := r.Db
 	user8 := db8.NewDb8User8(DB)
