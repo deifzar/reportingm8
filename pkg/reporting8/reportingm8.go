@@ -46,19 +46,19 @@ func (r *Reporting8) CreateAndSendEmailSummary() error {
 	users, err := user8.GetUsersByRole(model8.RoleUser)
 	if err != nil {
 		log8.BaseLogger.Error().Msg("CreateAndSendEmailSummary - errors triggered when fetching `user` role type users")
-		notification8.Helper.PublishSysErrorNotification("CreateAndSendEmailSummary - errors triggered when fetching `user` role type users", "urgent", "reportingm8")
+		notification8.PoolHelper.PublishSysErrorNotification("CreateAndSendEmailSummary - errors triggered when fetching `user` role type users", "urgent", "reportingm8")
 		return err
 	}
 	if len(users) < 1 {
 		log8.BaseLogger.Warn().Msg("CreateAndSendEmailSummary - at least one customer must be enrolled in the system before sending any email summary")
-		notification8.Helper.PublishSysWarningNotification("CreateAndSendEmailSummary - at least one customer must be enrolled in the system before sending any email summary", "normal", "reportingm8")
+		notification8.PoolHelper.PublishSysWarningNotification("CreateAndSendEmailSummary - at least one customer must be enrolled in the system before sending any email summary", "normal", "reportingm8")
 		return errors.New("CreateAndSendEmailSummary (Warning) - at least one customer must be enrolled in the system before sending any email summary")
 	}
 	// create email summary
 	message, err := r.getEmailSummaryMessage()
 	if err != nil {
 		log8.BaseLogger.Debug().Msg(err.Error())
-		notification8.Helper.PublishSysErrorNotification("CreateAndSendEmailSummary - generating email summary message", "urgent", "reportingm8")
+		notification8.PoolHelper.PublishSysErrorNotification("CreateAndSendEmailSummary - generating email summary message", "urgent", "reportingm8")
 		return err
 	}
 
@@ -67,14 +67,14 @@ func (r *Reporting8) CreateAndSendEmailSummary() error {
 	if err != nil {
 		log8.BaseLogger.Debug().Msg(err.Error())
 		log8.BaseLogger.Error().Msg("CreateAndSendEmailSummary - errors triggered when initializing the email settings")
-		notification8.Helper.PublishSysErrorNotification("CreateAndSendEmailSummary - errors triggered when initializing the email settings", "urgent", "reportingm8")
+		notification8.PoolHelper.PublishSysErrorNotification("CreateAndSendEmailSummary - errors triggered when initializing the email settings", "urgent", "reportingm8")
 		return err
 	}
 	err = email8.SendEmail([]string{"no-reply@cptm8.net", "info@deifzar.me"}, message.Bytes())
 	if err != nil {
 		log8.BaseLogger.Debug().Msg(err.Error())
 		log8.BaseLogger.Error().Msg("CreateAndSendEmailSummary - errors triggered when sending the Email html file")
-		notification8.Helper.PublishSysErrorNotification("CreateAndSendEmailSummary - errors triggered when sending the Email html file", "urgent", "reportingm8")
+		notification8.PoolHelper.PublishSysErrorNotification("CreateAndSendEmailSummary - errors triggered when sending the Email html file", "urgent", "reportingm8")
 		return err
 	}
 	return nil
@@ -94,12 +94,12 @@ func (r *Reporting8) CreateReportAndSendEmailNotification(companyName string) er
 	users, err := user8.GetUsersByRole(model8.RoleUser)
 	if err != nil {
 		log8.BaseLogger.Error().Msg("CreateReportAndSendEmailNotification - errors triggered when fetching `user` role type users")
-		notification8.Helper.PublishSysErrorNotification("CreateReportAndSendEmailNotification - errors triggered when fetching `user` role type users", "urgent", "reportingm8")
+		notification8.PoolHelper.PublishSysErrorNotification("CreateReportAndSendEmailNotification - errors triggered when fetching `user` role type users", "urgent", "reportingm8")
 		return err
 	}
 	if len(users) < 1 || !user8.ExistReportAuthor() || !user8.ExistReportOwner() {
 		log8.BaseLogger.Warn().Msg("CreateReportAndSendEmailNotification - customers, one report author and one report owner must be set in the system before sending any report")
-		notification8.Helper.PublishSysWarningNotification("CreateReportAndSendEmailNotification - customers, one report author and one report owner must be set in the system before sending any report", "normal", "reportingm8")
+		notification8.PoolHelper.PublishSysWarningNotification("CreateReportAndSendEmailNotification - customers, one report author and one report owner must be set in the system before sending any report", "normal", "reportingm8")
 		return errors.New("CreateReportAndSendEmailNotification (Warning) - customers, one report author and one report owner must be set in the system before sending any report")
 	}
 	// crete report and return data template
@@ -107,7 +107,7 @@ func (r *Reporting8) CreateReportAndSendEmailNotification(companyName string) er
 	if err != nil {
 		log8.BaseLogger.Debug().Stack().Msg(err.Error())
 		log8.BaseLogger.Debug().Msg(err.Error())
-		notification8.Helper.PublishSysErrorNotification("CreateReportAndSendEmailNotification - creating report", "urgent", "reportingm8")
+		notification8.PoolHelper.PublishSysErrorNotification("CreateReportAndSendEmailNotification - creating report", "urgent", "reportingm8")
 		return err
 	}
 
@@ -115,21 +115,21 @@ func (r *Reporting8) CreateReportAndSendEmailNotification(companyName string) er
 	repoURI, err := r.uploadReportIntoRepo(reportfilename)
 	if err != nil {
 		log8.BaseLogger.Debug().Stack().Msg(err.Error())
-		notification8.Helper.PublishSysErrorNotification("CreateReportAndSendEmailNotification - uploading report to cloud repo", "urgent", "reportingm8")
+		notification8.PoolHelper.PublishSysErrorNotification("CreateReportAndSendEmailNotification - uploading report to cloud repo", "urgent", "reportingm8")
 		return err
 	}
 	// add report stats and download link into DB
 	err = r.addDataReportIntoDB(datareport, repoURI)
 	if err != nil {
 		log8.BaseLogger.Debug().Msg(err.Error())
-		notification8.Helper.PublishSysErrorNotification("CreateReportAndSendEmailNotification - inserting report in database", "urgent", "reportingm8")
+		notification8.PoolHelper.PublishSysErrorNotification("CreateReportAndSendEmailNotification - inserting report in database", "urgent", "reportingm8")
 		return err
 	}
 
 	message, err := r.getEmailReportNotificationMessage(repoURI)
 	if err != nil {
 		log8.BaseLogger.Debug().Msg(err.Error())
-		notification8.Helper.PublishSysErrorNotification("CreateReportAndSendEmailNotification - creating email template", "urgent", "reportingm8")
+		notification8.PoolHelper.PublishSysErrorNotification("CreateReportAndSendEmailNotification - creating email template", "urgent", "reportingm8")
 		return err
 	}
 	// Send email to all `user` role type users informing that a new report is ready in the dashboard
@@ -137,7 +137,7 @@ func (r *Reporting8) CreateReportAndSendEmailNotification(companyName string) er
 	if err != nil {
 		log8.BaseLogger.Debug().Msg(err.Error())
 		log8.BaseLogger.Error().Msg("CreateReportAndSendEmailNotification - errors triggered when initializing the email settings")
-		notification8.Helper.PublishSysErrorNotification("CreateReportAndSendEmailNotification - errors triggered when initializing the email settings", "urgent", "reportingm8")
+		notification8.PoolHelper.PublishSysErrorNotification("CreateReportAndSendEmailNotification - errors triggered when initializing the email settings", "urgent", "reportingm8")
 		return err
 	}
 	// Question: Send email to all `user` role type users or only with the 'report' flag enabled?
@@ -146,7 +146,7 @@ func (r *Reporting8) CreateReportAndSendEmailNotification(companyName string) er
 	if err != nil {
 		log8.BaseLogger.Debug().Msg(err.Error())
 		log8.BaseLogger.Error().Msg("CreateReportAndSendEmailNotification - errors triggered when sending the Email html file")
-		notification8.Helper.PublishSysErrorNotification("CreateReportAndSendEmailNotification - ", "urgent", "reportingm8")
+		notification8.PoolHelper.PublishSysErrorNotification("CreateReportAndSendEmailNotification - ", "urgent", "reportingm8")
 		return err
 	}
 

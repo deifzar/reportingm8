@@ -4,11 +4,16 @@ Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"deifzar/reportingm8/pkg/amqpM8"
 	"deifzar/reportingm8/pkg/api8"
 	"deifzar/reportingm8/pkg/log8"
+	"deifzar/reportingm8/pkg/notification8"
 	"deifzar/reportingm8/pkg/utils"
 	"errors"
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/spf13/cobra"
 )
@@ -42,11 +47,22 @@ var launchCmd = &cobra.Command{
 			}
 			address := ipFlag + ":" + fmt.Sprint(portFlag)
 
+			// Set up graceful shutdown (connection pool will be initialized by api8.Init())
+			sigChan := make(chan os.Signal, 1)
+			signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+			go func() {
+				<-sigChan
+				log8.BaseLogger.Info().Msg("Shutdown signal received, cleaning up...")
+				amqpM8.CleanupConnectionPool()
+				os.Exit(0)
+			}()
+
 			var a api8.Api8
 			err := a.Init()
 			if err != nil {
 				log8.BaseLogger.Debug().Msg(err.Error())
 				log8.BaseLogger.Fatal().Msg("Error in `Launch` command line when initialising the API endpoint.")
+				notification8.PoolHelper.PublishSysErrorNotification("Error in `ReportinM8 Launch` command line when initialising the API endpoint", "urgent", "asmm8")
 				return err
 			}
 			a.Routes()
