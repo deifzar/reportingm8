@@ -195,7 +195,7 @@ func (s *Schedulerm8) GetSchedulerDetails(c *gin.Context) {
 func (s *Schedulerm8) HealthCheck(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status":    "healthy",
-		"timestamp": time.Now().UTC().Format(time.RFC3339),
+		"timestamp": time.Now().Format(time.RFC3339),
 		"service":   "reportingm8",
 	})
 }
