@@ -191,3 +191,56 @@ func (s *Schedulerm8) GetSchedulerDetails(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "success", "data": details, "msg": "new report scheduling settings - success"})
 	log8.BaseLogger.Info().Msg("200 HTTP Response - GetSchedulerDetails")
 }
+
+func (s *Schedulerm8) HealthCheck(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"status":    "healthy",
+		"timestamp": time.Now().UTC().Format(time.RFC3339),
+		"service":   "reportingm8",
+	})
+}
+
+func (s *Schedulerm8) ReadinessCheck(c *gin.Context) {
+	dbHealthy := true
+	if err := s.Db.Ping(); err != nil {
+		log8.BaseLogger.Error().Err(err).Msg("Database ping failed during readiness check")
+		dbHealthy = false
+	}
+
+	schedulerHealthy := true
+	if gocron8.BaseReportScheduler == nil {
+		schedulerHealthy = false
+	}
+
+	dbStatus := "unhealthy"
+	if dbHealthy {
+		dbStatus = "healthy"
+	}
+
+	schedulerStatus := "unhealthy"
+	if schedulerHealthy {
+		schedulerStatus = "healthy"
+	}
+
+	if dbHealthy && schedulerHealthy {
+		c.JSON(http.StatusOK, gin.H{
+			"status":    "ready",
+			"timestamp": time.Now().Format(time.RFC3339),
+			"service":   "reportingm8",
+			"checks": gin.H{
+				"database":  dbStatus,
+				"scheduler": schedulerStatus,
+			},
+		})
+	} else {
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"status":    "not ready",
+			"timestamp": time.Now().Format(time.RFC3339),
+			"service":   "reportingm8",
+			"checks": gin.H{
+				"database":  dbStatus,
+				"scheduler": schedulerStatus,
+			},
+		})
+	}
+}

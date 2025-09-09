@@ -106,6 +106,11 @@ func (a *Api8) Routes() {
 	schedulerM8 := controller8.NewSchedulerm8(a.DB, a.Config)
 	r.GET("/details", schedulerM8.GetSchedulerDetails)
 	r.POST("/update", schedulerM8.UpdateScheduler)
+	
+	// health checks for kubernetes probes
+	r.GET("/health", schedulerM8.HealthCheck)
+	r.GET("/ready", schedulerM8.ReadinessCheck)
+	
 	a.Router = r
 }
 

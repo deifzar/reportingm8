@@ -6,4 +6,6 @@ type Scheduler8Interface interface {
 	InitScheduler() error
 	UpdateScheduler(*gin.Context)
 	GetSchedulerDetails(*gin.Context)
+	HealthCheck(*gin.Context)
+	ReadinessCheck(*gin.Context)
 }
