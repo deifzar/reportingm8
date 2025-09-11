@@ -19,6 +19,7 @@ type Orchestrator8Interface interface {
 	ActivateConsumerByService(service string) error
 	PublishToExchange(exchange string, routingkey string, payload any, source string) error
 	ExistQueue(queueName string, queueArgs amqp.Table) bool
+	ExistConsumersForQueue(queueName string, queueArgs amqp.Table) bool
 	// BuildHandlers()
 	// BuildConsumers()
 }
