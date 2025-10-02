@@ -9,6 +9,7 @@ import (
 	"deifzar/reportingm8/pkg/gocron8"
 	"deifzar/reportingm8/pkg/log8"
 	"deifzar/reportingm8/pkg/model8"
+	"deifzar/reportingm8/pkg/orchestrator8"
 	"deifzar/reportingm8/pkg/reporting8"
 
 	"github.com/gin-gonic/gin"
@@ -20,10 +21,16 @@ import (
 type Schedulerm8 struct {
 	Db     *sql.DB
 	Config *viper.Viper
+	Orch   orchestrator8.Orchestrator8Interface
 }
 
 func NewSchedulerm8(db *sql.DB, cnfg *viper.Viper) Scheduler8Interface {
-	return &Schedulerm8{Db: db, Config: cnfg}
+	orch, err := orchestrator8.NewOrchestrator8()
+	if err != nil {
+		log8.BaseLogger.Debug().Msg(err.Error())
+		log8.BaseLogger.Fatal().Msg("Error initializing orchestrator8 in controller constructor")
+	}
+	return &Schedulerm8{Db: db, Config: cnfg, Orch: orch}
 }
 
 func (s *Schedulerm8) InitScheduler() error {
@@ -202,6 +209,7 @@ func (s *Schedulerm8) HealthCheck(c *gin.Context) {
 
 func (s *Schedulerm8) ReadinessCheck(c *gin.Context) {
 	dbHealthy := true
+	rbHealthy := true
 	if err := s.Db.Ping(); err != nil {
 		log8.BaseLogger.Error().Err(err).Msg("Database ping failed during readiness check")
 		dbHealthy = false
@@ -210,6 +218,13 @@ func (s *Schedulerm8) ReadinessCheck(c *gin.Context) {
 	schedulerHealthy := true
 	if gocron8.BaseReportScheduler == nil {
 		schedulerHealthy = false
+	}
+
+	queue_consumer := s.Config.GetStringSlice("ORCHESTRATORM8.reportingm8.Queue")
+	qargs_consumer := s.Config.GetStringMap("ORCHESTRATORM8.reportingm8.Queue-arguments")
+
+	if !s.Orch.ExistQueue(queue_consumer[1], qargs_consumer) || !s.Orch.ExistConsumersForQueue(queue_consumer[1], qargs_consumer) {
+		rbHealthy = false
 	}
 
 	dbStatus := "unhealthy"
@@ -222,13 +237,19 @@ func (s *Schedulerm8) ReadinessCheck(c *gin.Context) {
 		schedulerStatus = "healthy"
 	}
 
-	if dbHealthy && schedulerHealthy {
+	rbStatus := "unhealthy"
+	if rbHealthy {
+		rbStatus = "healthy"
+	}
+
+	if dbHealthy && rbHealthy && schedulerHealthy {
 		c.JSON(http.StatusOK, gin.H{
 			"status":    "ready",
 			"timestamp": time.Now().Format(time.RFC3339),
 			"service":   "reportingm8",
 			"checks": gin.H{
 				"database":  dbStatus,
+				"rabbitmq":  rbStatus,
 				"scheduler": schedulerStatus,
 			},
 		})
@@ -239,6 +260,7 @@ func (s *Schedulerm8) ReadinessCheck(c *gin.Context) {
 			"service":   "reportingm8",
 			"checks": gin.H{
 				"database":  dbStatus,
+				"rabbitmq":  rbStatus,
 				"scheduler": schedulerStatus,
 			},
 		})
