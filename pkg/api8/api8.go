@@ -26,7 +26,11 @@ type Api8 struct {
 }
 
 func (a *Api8) Init() error {
-	// Create log and tmp directories if they don't exist
+	// Create configs, log and tmp directories if they don't exist
+	if err := os.MkdirAll("configs", 0755); err != nil {
+		log8.BaseLogger.Error().Err(err).Msg("Failed to create configs directory")
+		return err
+	}
 	if err := os.MkdirAll("log", 0755); err != nil {
 		log8.BaseLogger.Error().Err(err).Msg("Failed to create log directory")
 		return err
@@ -106,11 +110,11 @@ func (a *Api8) Routes() {
 	schedulerM8 := controller8.NewSchedulerm8(a.DB, a.Config)
 	r.GET("/details", schedulerM8.GetSchedulerDetails)
 	r.POST("/update", schedulerM8.UpdateScheduler)
-	
+
 	// health checks for kubernetes probes
 	r.GET("/health", schedulerM8.HealthCheck)
 	r.GET("/ready", schedulerM8.ReadinessCheck)
-	
+
 	a.Router = r
 }
 
