@@ -1,0 +1,61 @@
+APP_ENV: DEV # DEV,TEST,PROD (DEV and TEST print logs in CMD screen)
+LOG_LEVEL: "0"
+ORCHESTRATORM8:
+  Services:
+      reportingm8: "http://127.0.0.1:8004"
+  Exchanges: # Format below: exchange_name:exchange_type
+    scheduler: "topic"
+  reportingm8: # API service name
+    Queue:
+      - scheduler # exchange name
+      - qreportingm8 # queue name
+      - 1
+    Routing-keys:
+      - "scheduler.qreportingm8.#" # binding key
+    Queue-arguments:
+    Consumer:
+      - "qreportingm8" # queue name
+      - "creportingm8" # consumer name
+      - "false" # autoack
+REPORTINGM8:
+  Template: 
+    emailsummary: "assets/[..]/emailsummarytemplate.html"
+    emailnotificationreport: "assets/[..]/emailnotificationreporttemplate.html"
+    report: "assets/[..]/reporttemplate.html"
+    clientorganisation: "ACME Corp." # Client organisation
+    dashboard: "https://mydashboard.example.com" # Link to dashboard
+  SMTP:
+    server: "hostname"
+    port: 587
+    username: "smtpuser"
+    password: "smtppass"
+    emailsender: "sender_email_address"
+  Timezone: "Australia/Sydney" # Reports and emails get delivered at 10 a.m. in the selected time zone.
+Cloud:
+  provider: "AWS" # Indicate the cloud provider: AWS, Azure, GCP
+  AWS:
+    region: "eu-north-1"
+    key: "iamuserkey"
+    secret: "iamusersecret"
+    bucket: "bucketname"
+Database: # PostgreSQL connection details
+  location: "hostname"
+  port: 5432
+  schema: "public"
+  database: "databasename"
+  username: "dbuser"
+  password: "dbpass"
+RabbitMQ: # RabbitMQ connection details
+  location: "hostname"
+  port: 5672
+  username: "user"
+  password: "pass"
+  pool:
+    max_connections: # default: 10
+    min_connections: # default: 2
+    pool.max_idle_time: # default: "1h" Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+    max_lifetime: # default: "2h" Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+    health_check_period: # default: "30m" Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+    connection_timeout: # default: "30s" Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+    retry_attempts: # default: 3
+    retry_delay: # default: "2s" Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
