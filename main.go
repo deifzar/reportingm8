@@ -19,9 +19,11 @@ import (
 	"deifzar/reportingm8/cmd"
 	"deifzar/reportingm8/pkg/gocron8"
 	"deifzar/reportingm8/pkg/log8"
+	"syscall"
 )
 
 func main() {
+	syscall.Umask(0027) // Files: 640, Dirs: 750
 	gocron8.GetGoCron8()
 	log8.GetLogger()
 	cmd.Execute()
