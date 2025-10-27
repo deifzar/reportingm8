@@ -25,6 +25,6 @@ import (
 func main() {
 	syscall.Umask(0027) // Files: 640, Dirs: 750
 	gocron8.GetGoCron8()
-	log8.GetLogger()
+	log8.GetLogger("log/reportingm8.log")
 	cmd.Execute()
 }
