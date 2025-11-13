@@ -2,6 +2,7 @@ package api8
 
 import (
 	"database/sql"
+	"net/http"
 	"os"
 	"time"
 
@@ -68,27 +69,6 @@ func (a *Api8) Init() error {
 		return err2
 	}
 
-	orchestrator8, err := orchestrator8.NewOrchestrator8()
-	if err != nil {
-		log8.BaseLogger.Fatal().Msg("Error connecting to the RabbitMQ server.")
-		return err
-	}
-	err = orchestrator8.InitOrchestrator()
-	if err != nil {
-		log8.BaseLogger.Error().Msg("Error bringing up the RabbitMQ exchanges.")
-		return err
-	}
-	err = orchestrator8.ActivateQueueByService("reportingm8")
-	if err != nil {
-		log8.BaseLogger.Error().Msg("Error bringing up the RabbitMQ queues for the `reportingm8` service.")
-		return err
-	}
-	err = orchestrator8.ActivateConsumerByService("reportingm8")
-	if err != nil {
-		log8.BaseLogger.Error().Msg("Error activating consumer with dedicated connection for the `reportingm8` service.")
-		return err
-	}
-
 	a.DB = conn
 	a.Config = v
 
@@ -102,6 +82,68 @@ func (a *Api8) Init() error {
 	}
 
 	return nil
+}
+
+// InitializeConsumerAfterReady starts a goroutine that waits for the API service
+// to become ready (via /ready endpoint) before initializing RabbitMQ queues and consumers.
+// This prevents consumers from receiving messages before the API can handle them.
+func (a *Api8) InitializeConsumerAfterReady() {
+	go func() {
+		locationService := a.Config.GetString("ORCHESTRATORM8.Services.reportingm8")
+		requestURL := locationService + "/ready"
+
+		log8.BaseLogger.Info().Msg("Waiting for API service to become ready before activating RabbitMQ consumer...")
+
+		// Poll the /ready endpoint until the service is healthy
+		maxRetries := 60 // 5 minutes total (60 * 5 seconds)
+		retryCount := 0
+		for {
+			resp, err := http.Get(requestURL)
+			if err == nil && resp.StatusCode == http.StatusOK {
+				resp.Body.Close()
+				log8.BaseLogger.Info().Msg("API service is ready. Initializing RabbitMQ consumer...")
+				break
+			}
+			if resp != nil {
+				resp.Body.Close()
+			}
+
+			retryCount++
+			if retryCount >= maxRetries {
+				log8.BaseLogger.Error().Msg("Timeout waiting for API service to become ready. Consumer will not be activated.")
+				return
+			}
+
+			time.Sleep(5 * time.Second)
+		}
+
+		// Initialize RabbitMQ orchestrator
+		orchestrator8, err := orchestrator8.NewOrchestrator8()
+		if err != nil {
+			log8.BaseLogger.Error().Err(err).Msg("Error connecting to the RabbitMQ server.")
+			return
+		}
+
+		err = orchestrator8.InitOrchestrator()
+		if err != nil {
+			log8.BaseLogger.Error().Err(err).Msg("Error bringing up the RabbitMQ exchanges.")
+			return
+		}
+
+		err = orchestrator8.ActivateQueueByService("reportingm8")
+		if err != nil {
+			log8.BaseLogger.Error().Err(err).Msg("Error bringing up the RabbitMQ queues for the `reportingm8` service.")
+			return
+		}
+
+		err = orchestrator8.ActivateConsumerByService("reportingm8")
+		if err != nil {
+			log8.BaseLogger.Error().Err(err).Msg("Error activating consumer with dedicated connection for the `reportingm8` service.")
+			return
+		}
+
+		log8.BaseLogger.Info().Msg("RabbitMQ consumer successfully activated for reportingm8 service.")
+	}()
 }
 
 func (a *Api8) Routes() {
