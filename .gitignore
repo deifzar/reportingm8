@@ -33,8 +33,6 @@ tmp/*
 # exception to the rule
 !tmp/.gitkeep 
 
-# docs folder
-docs/*
-
 # AI
+.claude/*
 CLAUDE.md
